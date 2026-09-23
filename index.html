@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080b11">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Monkey Contabilidade</title>
+<style>
+*{box-sizing:border-box}
+:root{--bg:#080b11;--panel:#111720;--panel2:#151d28;--line:#283240;--muted:#9aa5b5;--text:#f5f7fa;--green:#20b85a}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input{font:inherit}
+.app{max-width:560px;margin:auto;padding:calc(24px + env(safe-area-inset-top)) 14px 108px}
+h1{font-size:26px;line-height:1.1;margin:0;font-weight:900;letter-spacing:-.5px}
+.sub{color:var(--muted);font-size:13px;margin:5px 0 18px}
+
+.section{margin-top:14px}
+.section-title{font-size:11px;color:var(--muted);font-weight:850;letter-spacing:.5px;margin:0 0 7px;text-transform:uppercase}
+
+.annual-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:14px}
+.annual-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.annual-title{font-size:15px;font-weight:900}
+.annual-year{font-size:12px;color:var(--green);font-weight:900;background:#102019;border:1px solid #1d8f4b;padding:5px 9px;border-radius:999px}
+.annual-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.metric{background:var(--panel2);border:1px solid #222d3a;border-radius:13px;padding:10px 9px;min-width:0}
+.metric small{display:block;color:var(--muted);font-size:10px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.metric b{display:block;font-size:13px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.metric.profit{background:#102019;border-color:#1d8f4b}
+.green{color:var(--green)!important}
+
+.month-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.month-box{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:11px 12px}
+.month-box small{display:block;color:var(--muted);font-size:10px}
+.month-box b{display:block;font-size:16px;margin-top:5px}
+
+.scroller{display:flex;gap:7px;overflow-x:auto;padding:1px 1px 5px;scrollbar-width:none}
+.scroller::-webkit-scrollbar{display:none}
+.pill{flex:0 0 auto;border:1px solid var(--line);background:var(--panel);color:#aeb7c4;border-radius:999px;padding:9px 14px;font-weight:850;font-size:12px}
+.pill.active{background:var(--green);color:#fff;border-color:var(--green)}
+
+.search{width:100%;margin:15px 0 10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;color:#fff;outline:none}
+.search:focus{border-color:#397653}
+
+.records{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.records-head{padding:13px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.records-head b{font-size:14px}
+.muted{color:var(--muted);font-size:11px}
+.item{padding:14px;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.top{display:flex;justify-content:space-between;gap:10px}
+.name{font-weight:900;font-size:14px}
+.date{font-size:11px;color:var(--muted);margin-top:4px}
+.profit-value{font-size:13px;font-weight:900;white-space:nowrap}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}
+.num{background:var(--panel2);border-radius:10px;padding:8px;min-width:0}
+.num small{display:block;color:var(--muted);font-size:9px}
+.num b{display:block;font-size:11px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{padding:32px 16px;text-align:center;color:var(--muted);font-size:13px}
+
+.bottom{position:fixed;z-index:20;left:0;right:0;bottom:0;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(8,11,17,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+.bottom button{width:100%;max-width:532px;display:block;margin:auto;padding:14px;border-radius:14px}
+.btn{border:1px solid var(--line);background:var(--panel2);color:#fff;border-radius:12px;padding:10px 12px}
+.main{background:var(--green);border-color:var(--green);font-weight:900;color:#06100a}
+
+.modal{display:none;position:fixed;z-index:30;inset:0;background:#000b;align-items:flex-end}
+.modal.show{display:flex}
+.sheet{width:100%;max-width:560px;margin:auto;background:#0e141c;border:1px solid var(--line);border-radius:22px 22px 0 0;padding:18px 14px calc(22px + env(safe-area-inset-bottom))}
+.sheet h2{margin:0 0 14px;font-size:20px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.full{grid-column:1/-1}
+label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
+input{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;color:#fff;padding:12px;outline:none}
+.row{display:flex;gap:9px;margin-top:13px}
+.row button{flex:1}
+
+@media(max-width:380px){
+ .annual-grid{gap:6px}.metric{padding:9px 7px}.metric b{font-size:11px}.month-box b{font-size:14px}
+}
+@media(min-width:700px){
+ body{padding:20px}.app{border:1px solid var(--line);border-radius:24px;min-height:calc(100vh - 40px);background:#090d13}.bottom{position:static;background:transparent;border:0;padding:12px 0 0}
+}
+
+.settingsBar{display:flex;justify-content:flex-end;margin:-7px 0 10px}
+.settingsBtn{border:1px solid var(--line);background:var(--panel);color:#dce2e8;border-radius:11px;padding:8px 11px;font-size:12px;font-weight:800}
+.settingsSection{margin-top:14px}
+.settingsSection h3{font-size:13px;margin:0 0 9px}
+.productRows{display:flex;flex-direction:column;gap:0;max-height:48vh;overflow:auto;margin-top:10px}
+.productRow{background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:11px 0}
+.productRowTop{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:5px}
+.productRowName{font-weight:900;font-size:14px;line-height:1.2}
+.iconBtn{border:1px solid var(--line);background:var(--panel);color:#fff;border-radius:9px;padding:6px 9px}
+.catalog-list{display:flex;flex-direction:column;gap:0;max-height:48vh;overflow:auto;margin-top:10px}
+.catalog-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.catalog-item:last-child{border-bottom:0}
+.catalog-info{min-width:0;flex:1}
+.catalog-name{font-weight:900;font-size:14px;line-height:1.2}
+.catalog-values{color:var(--text);font-size:12px;line-height:1.35;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.catalog-edit{flex:0 0 42px;width:42px;height:42px;border:1px solid var(--line);background:var(--panel);color:#fff;border-radius:11px;font-size:17px;display:flex;align-items:center;justify-content:center}
+.settingsActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.settingsActions button{width:100%}
+.fileBtn{position:relative;overflow:hidden}
+.fileBtn input{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+.settingsNative{margin:-7px 0 12px}
+.settingsNative>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel);color:#dce2e8;border-radius:11px;padding:8px 11px;font-size:12px;font-weight:800}
+.settingsNative>summary::-webkit-details-marker{display:none}
+.settingsNative[open]>summary{background:#153021;border-color:#1d8f4b;color:#fff}
+.settingsOverlay{position:fixed;z-index:100;inset:0;background:#000b;display:flex;align-items:flex-end}
+.settingsSheet{width:100%;max-width:560px;margin:auto;background:#0e141c;border:1px solid var(--line);border-radius:22px 22px 0 0;padding:18px 14px calc(22px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
+
+/* Força letras em CAIXA ALTA nos campos de texto */
+input[type="text"], input[type="search"], textarea {
+  text-transform: uppercase;
+}
+</style>
+
+<style>
+.podSuggestions{
+  position:absolute;
+  left:0;
+  right:0;
+  top:calc(100% + 4px);
+  z-index:1000;
+  background:var(--panel,#11161f);
+  border:1px solid var(--line,#26303c);
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:0 12px 30px rgba(0,0,0,.35);
+  max-height:220px;
+  overflow-y:auto;
+}
+.podSuggestion{
+  padding:12px 13px;
+  border-bottom:1px solid var(--line,#26303c);
+  cursor:pointer;
+  font-weight:800;
+  color:var(--text,#fff);
+}
+.podSuggestion:last-child{border-bottom:0}
+.podSuggestion:active{background:rgba(255,255,255,.08)}
+.podFieldWrap{position:relative}
+</style>
+
+</head>
+<body>
+<div class="app">
+<h1>📊 Monkey Contabilidade</h1>
+<div class="sub">Vendas • custos • frete • lucro</div>
+<details class="settingsNative">
+  <summary>⚙️ Configurações</summary>
+  <div class="settingsOverlay">
+    <div class="settingsSheet">
+      <div class="catalog-title">⚙️ Cadastro de vapes</div>
+      <div class="catalog-sub">Valores padrão usados só em novos lançamentos.</div>
+
+      <div class="catalog-form">
+        <div class="full">
+          <label>Nome do vape</label>
+          <input id="catName" placeholder="Ex.: IGNITE V250">
+        </div>
+        <div>
+          <label>Custo padrão</label>
+          <input id="catCost" type="number" step=".01" placeholder="R$ 0,00">
+        </div>
+        <div>
+          <label>Venda padrão</label>
+          <input id="catSale" type="number" step=".01" placeholder="R$ 0,00">
+        </div>
+        <div class="full">
+          <label>Custo adicional padrão</label>
+          <input id="catAdd" type="number" step=".01" placeholder="R$ 0,00">
+        </div>
+      </div>
+
+      <div class="catalog-save-row">
+        <button class="btn" type="button" onclick="this.closest('details').open=false">Fechar</button>
+        <button id="catalogSaveBtn" class="btn main" type="button">Salvar produto</button>
+      </div>
+
+      <div class="catalog-list" id="productRows"></div>
+
+      <div class="catalog-footer">
+        <div class="settingsActions">
+          <button class="btn" type="button" onclick="exportBackup()">💾 Backup</button>
+          <label class="btn fileBtn" style="text-align:center">📥 Importar
+            <input id="importFile" type="file" accept=".json" onchange="importBackup(event)">
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+</details>
+
+
+
+<div class="annual-card">
+  <div class="annual-head">
+    <div class="annual-title">📈 Resumo anual</div>
+    <div class="annual-year"><span id="annualYear">2026</span></div>
+  </div>
+  <div class="annual-grid">
+    <div class="metric"><small>Faturamento</small><b id="aRev">R$ 0,00</b></div>
+    <div class="metric"><small>Custo total</small><b id="aCost">R$ 0,00</b></div>
+    <div class="metric profit"><small>Lucro total</small><b id="aProfit" class="green">R$ 0,00</b></div>
+  </div>
+</div>
+
+<div class="month-stats">
+  <div class="month-box"><small>Faturamento do mês</small><b id="mRev">R$ 0,00</b></div>
+  <div class="month-box"><small>Custo do mês</small><b id="mCost">R$ 0,00</b></div>
+  <div class="month-box"><small>Lucro do mês</small><b id="mProfit" class="green">R$ 0,00</b></div>
+  <div class="month-box"><small>Vendas no mês</small><b id="mCount">0</b></div>
+</div>
+
+<div class="section">
+  <div class="section-title">Ano</div>
+  <div class="scroller years" id="years"></div>
+</div>
+
+<div class="section">
+  <div class="section-title">Mês — <span id="yearLabel"></span></div>
+  <div class="scroller months" id="months"></div>
+</div>
+
+<input class="search" id="search" placeholder="🔎  Buscar vape..." oninput="render()">
+
+<div class="records">
+  <div class="records-head">
+    <b id="monthTitle"></b>
+    <span class="muted" id="monthCount"></span>
+  </div>
+  <div id="list"></div>
+</div>
+</div>
+
+<div class="bottom"><button class="btn main" onclick="openEntry()">＋ Novo lançamento</button></div>
+
+
+
+
+<div class="modal" id="modal"><div class="sheet">
+<h2>Novo lançamento</h2>
+<div class="grid">
+<div class="full"><label>Vape</label><input id="product" list="products" placeholder="Ex.: IGNITE V250"><datalist id="products"></datalist></div>
+<div><label>Data</label><input id="date" type="date"></div>
+<div><label>Frete (R$)</label><input id="freight" type="number" step=".01" value="0"></div>
+<div><label>Custo (R$)</label><input id="cost" type="number" step=".01"></div>
+<div><label>Venda (R$)</label><input id="sale" type="number" step=".01"></div>
+<div class="full"><label>Custo adicional prévio (R$)</label><input id="add" type="number" step=".01" value="0"></div>
+</div>
+<div class="row"><button class="btn" onclick="closeEntry()">Cancelar</button><button class="btn main" onclick="saveEntry()">Salvar</button></div>
+</div></div>
+
+<script>
+const KEY='monkey-contabilidade-preview-v2';
+let db=JSON.parse(localStorage.getItem(KEY)||'{"products":[],"entries":[]}');
+let year=new Date().getFullYear(); if(year<2026)year=2026;if(year>2028)year=2028;
+let month=new Date().getMonth()+1;
+const M=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const $=x=>document.getElementById(x);
+document.querySelector('.settingsNative').addEventListener('toggle',function(){
+  if(this.open){clearCatalogForm();renderProductSettings();}
+});
+const money=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const pad=n=>String(n).padStart(2,'0');
+const save=()=>{
+  try{
+    localStorage.setItem(KEY,JSON.stringify(db));
+  }catch(e){
+    // Mesmo se o navegador bloquear localStorage (ex.: prévia local),
+    // mantém os dados em memória para que o cadastro continue funcionando.
+    console.warn('localStorage indisponível; mantendo dados em memória.', e);
+  }
+  return true;
+};
+const num=v=>Number(String(v??'').replace(',', '.'))||0;
+const key=(y,m)=>`${y}-${pad(m)}`;
+
+let editingProductIndex=-1;
+
+function openSettings(){
+  editingProductIndex=-1;
+  clearCatalogForm();
+  renderProductSettings();
+  const modal=document.getElementById('settingsModal');
+  if(modal) modal.classList.add('show');
+}
+function closeSettings(){
+  const modal=document.getElementById('settingsModal');
+  if(modal) modal.classList.remove('show');
+}
+function clearCatalogForm(){
+  $('catName').value='';
+  $('catCost').value='';
+  $('catSale').value='';
+  $('catAdd').value='';
+  editingProductIndex=-1;
+}
+function ht(v){
+  return String(v??'').replace(/[&<>\"']/g, ch=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'
+  }[ch]));
+}
+function renderProductSettings(){
+  const box=$('productRows');
+  if(!db.products.length){
+    box.innerHTML='<div class="empty">Nenhum vape cadastrado.</div>';
+    return;
+  }
+  box.innerHTML=db.products.map((p,i)=>`
+    <div class="catalog-item">
+      <div class="catalog-info">
+        <div class="catalog-name">${ht(p.name)}</div>
+        <div class="catalog-values">Custo ${money(p.cost)} • Venda ${money(p.sale)} • Adic. ${money(p.add)}</div>
+      </div>
+      <button class="catalog-edit" type="button" data-edit-product="${i}">✏️</button>
+    </div>`).join('');
+}
+function editCatalogProduct(i){
+  const p=db.products[i];
+  if(!p)return;
+  editingProductIndex=i;
+  $('catName').value=p.name||'';
+  $('catCost').value=p.cost??0;
+  $('catSale').value=p.sale??0;
+  $('catAdd').value=p.add??0;
+  $('catName').focus();
+}
+function saveCatalogProduct(){
+  const name=$('catName').value.trim();
+  if(!name){alert('Informe o nome do vape.');return;}
+  const product={name,cost:num($('catCost').value),sale:num($('catSale').value),add:num($('catAdd').value)};
+  if(editingProductIndex>=0){
+    db.products[editingProductIndex]=product;
+  }else{
+    const same=db.products.findIndex(p=>p.name.trim().toLowerCase()===name.toLowerCase());
+    if(same>=0) db.products[same]=product;
+    else db.products.push(product);
+  }
+  if(!save()) return;
+  fillProducts();
+  renderProductSettings();
+  clearCatalogForm();
+  alert('Produto salvo com sucesso.');
+}
+function bindSettings(){
+  $('catalogSaveBtn').addEventListener('click',saveCatalogProduct);
+  $('productRows').addEventListener('click',e=>{
+    const btn=e.target.closest('[data-edit-product]');
+    if(btn) editCatalogProduct(Number(btn.dataset.editProduct));
+  });
+}
+function exportBackup(){
+  const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='monkey-contabilidade-backup.json';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function importBackup(ev){
+  const file=ev.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(reader.result);
+      if(!data||!Array.isArray(data.products)||!Array.isArray(data.entries))throw new Error();
+      if(!confirm('Importar este backup vai substituir os dados atuais deste aparelho. Continuar?'))return;
+      db=data; save(); fillProducts(); renderProductSettings(); render();
+      alert('Backup importado com sucesso.');
+    }catch(e){alert('Arquivo de backup inválido.');}
+    ev.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+function init(){
+ if(!db.products.length){db.products=[
+ {name:'ELFBAR 23K',cost:81,sale:135,add:0},{name:'IGNITE V400 ICE',cost:100,sale:170,add:0},
+ {name:'IGNITE V300',cost:92,sale:150,add:0},{name:'IGNITE V155',cost:74,sale:135,add:0},
+ {name:'WAKA 30K PRO',cost:70,sale:125,add:0},{name:'WAKA 46K',cost:73,sale:140,add:0},
+ {name:'IGNITE V250',cost:88,sale:140,add:0},{name:'ELFBAR 35K',cost:81,sale:140,add:0}];save();}
+ renderYears();renderMonths();fillProducts();render();
+}
+function renderYears(){
+ $('years').innerHTML=[2026,2027,2028].map(y=>`<button class="pill ${y===year?'active':''}" onclick="year=${y};month=1;renderYears();renderMonths();render()">20${String(y).slice(2)}</button>`).join('');
+ $('yearLabel').textContent=year;$('annualYear').textContent=year;
+}
+function renderMonths(){
+ $('months').innerHTML=M.map((n,i)=>`<button class="pill ${i+1===month?'active':''}" onclick="month=${i+1};renderMonths();render()">${n.slice(0,3)}</button>`).join('');
+}
+function fillProducts(){
+ $('products').innerHTML=db.products.map(p=>`<option value="${p.name}">`).join('');
+}
+$('product').addEventListener('input',()=>{
+ const p=db.products.find(x=>x.name.toLowerCase()===$('product').value.trim().toLowerCase());
+ if(p){$('cost').value=p.cost;$('sale').value=p.sale;$('add').value=p.add;}
+});
+function render(){
+ const q=$('search').value.trim().toLowerCase();
+ const mk=key(year,month);
+ const list=db.entries.filter(e=>e.date.startsWith(mk)&&(!q||e.product.toLowerCase().includes(q)));
+ const sum=(arr,field)=>arr.reduce((s,e)=>s+Number(e[field]||0),0);
+ const revenue=sum(list,'sale');
+ const cost=list.reduce((s,e)=>s+e.cost+e.add+e.freight,0);
+ $('mRev').textContent=money(revenue);$('mCost').textContent=money(cost);$('mProfit').textContent=money(revenue-cost);$('mCount').textContent=list.length;
+ const all=db.entries.filter(e=>e.date.startsWith(String(year)));
+ const ar=sum(all,'sale'),ac=all.reduce((s,e)=>s+e.cost+e.add+e.freight,0);
+ $('aRev').textContent=money(ar);$('aCost').textContent=money(ac);$('aProfit').textContent=money(ar-ac);
+ $('monthTitle').textContent=`${M[month-1]} ${year}`;$('monthCount').textContent=`${list.length} lançamento${list.length===1?'':'s'}`;
+ if(!list.length){$('list').innerHTML='<div class="empty">Nenhum lançamento neste mês.</div>';return}
+ $('list').innerHTML=list.sort((a,b)=>b.date.localeCompare(a.date)).map(e=>{
+   const c=e.cost+e.add+e.freight,l=e.sale-c;
+   return `<div class="item"><div class="top"><div><div class="name">${e.product}</div><div class="date">${e.date.split('-').reverse().join('/')}</div></div><b class="profit-value green">${money(l)}</b></div>
+   <div class="nums"><div class="num"><small>Custo</small><b>${money(e.cost)}</b></div><div class="num"><small>Venda</small><b>${money(e.sale)}</b></div><div class="num"><small>Frete</small><b>${money(e.freight)}</b></div></div>
+   <div class="nums"><div class="num"><small>Adicional</small><b>${money(e.add)}</b></div><div class="num"><small>Custo final</small><b>${money(c)}</b></div><div class="num"><small>Lucro</small><b class="green">${money(l)}</b></div></div></div>`;
+ }).join('');
+}
+function openEntry(){$('date').value=new Date().toISOString().slice(0,10);$('modal').classList.add('show')}
+function closeEntry(){$('modal').classList.remove('show')}
+function saveEntry(){
+ const p=$('product').value.trim(),d=$('date').value;if(!p||!d){alert('Informe o vape e a data.');return}
+ db.entries.push({product:p,date:d,cost:num($('cost').value),sale:num($('sale').value),add:num($('add').value),freight:num($('freight').value)});
+ save();year=+d.slice(0,4);month=+d.slice(5,7);renderYears();renderMonths();render();closeEntry();
+}
+bindSettings();
+init();
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}));}
+
+// Todos os campos de texto ficam e são salvos em CAIXA ALTA.
+document.addEventListener('input', function(e){
+  const el = e.target;
+  if (el && (el.matches('input[type="text"], input[type="search"], textarea'))) {
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const upper = el.value.toLocaleUpperCase('pt-BR');
+    if (el.value !== upper) {
+      el.value = upper;
+      if (typeof start === 'number' && typeof end === 'number') {
+        el.setSelectionRange(start, end);
+      }
+    }
+  }
+});
+
+document.addEventListener('change', function(e){
+  const el = e.target;
+  if (el && (el.matches('input[type="text"], input[type="search"], textarea'))) {
+    el.value = el.value.toLocaleUpperCase('pt-BR');
+  }
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const textFields = document.querySelectorAll(
+    'input[type="text"], textarea'
+  );
+  textFields.forEach(el => {
+    el.addEventListener('input', () => {
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      el.value = el.value.toUpperCase();
+      try { el.setSelectionRange(start, end); } catch(e) {}
+    });
+    el.addEventListener('change', () => {
+      el.value = el.value.toUpperCase();
+    });
+  });
+});
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const inputs = [...document.querySelectorAll('input[type="text"]')];
+  const vapeInput = inputs.find(el => {
+    const parentText = (el.parentElement?.innerText || '').toUpperCase();
+    const aria = (el.getAttribute('aria-label') || '').toUpperCase();
+    const placeholder = (el.getAttribute('placeholder') || '').toUpperCase();
+    return parentText.includes('VAPE') || parentText.includes('POD') ||
+           aria.includes('VAPE') || aria.includes('POD') ||
+           placeholder.includes('VAPE') || placeholder.includes('POD');
+  });
+
+  if (!vapeInput) return;
+
+  let wrap = vapeInput.parentElement;
+  if (!wrap.classList.contains('podFieldWrap')) {
+    const newWrap = document.createElement('div');
+    newWrap.className = 'podFieldWrap';
+    vapeInput.parentNode.insertBefore(newWrap, vapeInput);
+    newWrap.appendChild(vapeInput);
+    wrap = newWrap;
+  }
+
+  const box = document.createElement('div');
+  box.className = 'podSuggestions';
+  box.style.display = 'none';
+  wrap.appendChild(box);
+
+  function getCatalog() {
+    try {
+      const raw = localStorage.getItem('monkey-contabilidade-preview-v2');
+      if (!raw) return [];
+      const data = JSON.parse(raw);
+      const catalog = data.catalog || data.products || [];
+      return Array.isArray(catalog) ? catalog : [];
+    } catch(e) {
+      return [];
+    }
+  }
+
+  function productName(p) {
+    return String(p.name || p.nome || p.vape || '').trim().toUpperCase();
+  }
+
+  function showSuggestions() {
+    const q = vapeInput.value.trim().toUpperCase();
+    const names = [...new Set(getCatalog().map(productName).filter(Boolean))];
+
+    if (!q) {
+      box.style.display = 'none';
+      box.innerHTML = '';
+      return;
+    }
+
+    const matches = names.filter(name => name.includes(q)).slice(0, 8);
+
+    if (!matches.length) {
+      box.style.display = 'none';
+      box.innerHTML = '';
+      return;
+    }
+
+    box.innerHTML = matches.map(name =>
+      '<div class="podSuggestion" data-name="' +
+      name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;') +
+      '">' + name.replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</div>'
+    ).join('');
+
+    box.style.display = 'block';
+  }
+
+  vapeInput.addEventListener('input', showSuggestions);
+  vapeInput.addEventListener('focus', showSuggestions);
+
+  box.addEventListener('click', (e) => {
+    const item = e.target.closest('.podSuggestion');
+    if (!item) return;
+    vapeInput.value = item.dataset.name;
+    vapeInput.dispatchEvent(new Event('input', {bubbles:true}));
+    vapeInput.dispatchEvent(new Event('change', {bubbles:true}));
+    box.style.display = 'none';
+    vapeInput.focus();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!wrap.contains(e.target)) box.style.display = 'none';
+  });
+
+  vapeInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') box.style.display = 'none';
+  });
+});
+</script>
+
+</body>
+</html>
